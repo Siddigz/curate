@@ -5,8 +5,13 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#define CTRL(c) (c & 31)
+
+
 
 struct termios OGTerminal;
+
+
 
 void exitP(const char* desc){
     perror(desc);
@@ -45,6 +50,36 @@ void enableRaw(){
     }
 }
 
+char keyReading(){
+    char letter;
+    int readOutput;
+
+    //Reads each letter and returns it
+    while((readOutput = read(STDIN_FILENO, &letter, 1)) != -1){
+        if(readOutput == -1 && errno != EAGAIN){
+            exitP("keyReading: read");
+        }else{
+            break;
+        }
+    }
+
+    return letter;
+}
+
+void letterProcessing(){
+    char letter = keyReading();
+
+    switch(letter){
+        case CTRL('q'):
+            exit(0);
+            break;
+    }
+}   
+
+void refresh(){
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+}
 
 
 int main(){
@@ -53,21 +88,9 @@ int main(){
     enableRaw();
 
     while(1){
-        char letter = '\0';
-
-        if(read(STDIN_FILENO, &letter, 1) == -1 && errno != EAGAIN){
-            exitP("main: read");
-        }
-        
-        if(iscntrl(letter)){
-            printf("%d\r\n",letter);    
-        }else{
-            printf("%d: '%c'\r\n", letter, letter);
-        }
-        if(letter == 'q'){
-            break;
-        }
+        refresh();
+        letterProcessing();
     }
-    
+
     return 0;
 }
