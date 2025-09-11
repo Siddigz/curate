@@ -1,2 +1,3 @@
 Curate 
-Text Editor
+
+Terminal text editor built in C
